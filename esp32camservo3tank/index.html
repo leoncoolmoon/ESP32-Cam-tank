@@ -103,6 +103,7 @@
 <input type="text" placeholder="xxx.xxx.xxx.xxx" value="192.168.4.1" id="ipad" style="width:100;"/></br>
 <div id="bat" >Battery: 0 v</div>
 <div id="sig" >Signal: 0 db</div>
+<div id="fps" >avgFPS: 0 </div>                               
 <!-- <div id="dir" >Direction: 0</div> -->
 <input type="checkbox" id='settingbt' onclick="menu(this.checked)">Setting</input>
 <div id='settings' style='display:none'>
@@ -143,7 +144,7 @@
 </div></div></div>
 <div id='outerContainer'>
 <div id="stream-container" class="image-container" tabindex="0" onkeydown="keyCtrl(event.keyCode)" onkeyup="keyStop()">
-	<img id="stream" ></div>
+	<img id="stream" onload="fpsc()"></div>
 <div id="part3" class="nav" tabindex="2" onkeydown="keyCtrl(event.keyCode)" onkeyup="keyStop()" >
  <div id="leftbt"><div>
 	<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"> <path d="M8.122 24l-4.122-4 8-8-8-8 4.122-4 11.878 12z" fill="white" transform="rotate(180,12,12)"/></svg></div></div>
@@ -160,6 +161,18 @@
 	<div id='container' class="container">
 	<div id='item' class="item"></div></div></div></div>
 <script>
+var fpst1=0,fpst2,fps,afps=0,fc=0;
+function fpsc(){
+fc=fc+1;
+fpst2=new Date().getTime();
+
+try{
+fps=Math.round(100000/(fpst2-fpst1))/100;
+afps=Math.round((afps*fc+fps)/(fc+1)*100)/100;
+}catch(e){fps=0;}
+document.getElementById("fps").innerText = "avgFPS: "+afps;
+fpst1=fpst2;
+}
 var canw,canh;
 var rec = false;
 const recCav = document.createElement("canvas");
@@ -246,6 +259,7 @@ window.addEventListener('resize',updateSize,false);
 window.addEventListener('orientationchange',updateSize,false);
 //fit window^	
 var connection = false;
+var connecting = false;
 var requestImg = false;
 var incomming = false;
 var d3 = 1;
@@ -256,11 +270,13 @@ const WS_URL = "ws://" + window.location.host + ":82";
 var ws = null;
 var rec = null;
 var ckConn = null;
-function connect(){
+function connect(){if(!connecting){
 try{if((ws !== undefined) && (ws !== null)){ws.close();}}catch(e){ws=null;}
-try{if(!connection)wsConnect(WS_URL);}catch(e){
-try{if(!connection)wsConnect("ws://"+document.getElementById("ipad").value+":82");}catch (e){console.log(e);
-}}}
+try{if(!connection)wsConnect(WS_URL); connecting = true; return;}catch(e){
+try{if(!connection)wsConnect("ws://"+document.getElementById("ipad").value+":82");connecting = true; return;}catch (e){console.log(e);connecting = false; return;
+}}
+connecting = true; return;
+}}
  connect();
  itv(itv_v);
 function getParameterByNameFromString(name,ParameterString) {
@@ -282,18 +298,23 @@ ckConn=setInterval(function() {
 function wsConnect(url) {
 ws = new WebSocket(url, ['arduino']);
 ws.onopen=()=>{
+connecting = false;                  
 connection=true; 
 document.getElementById("play").click();
 checkConn();
 console.log("connected");
 ws.send("greetings");}
 ws.onerror=()=>{
+connecting = false;                   
 console.log("ws e");}
 ws.onclose=()=>{
+connecting = false;                  
 connection=false;
 clearInterval(ckConn);
-console.log("drop out w c");}
+console.log("drop out w c");
+connect();}
 ws.onmessage = message => {
+connecting = false;                   
 incomming = true;
 	if (message.data instanceof Blob) {
 	requestImg = false;
@@ -431,7 +452,9 @@ d3=val;}
 var interval = null;
 function photo(){
 if(connection) {
-if(!requestImg && view.complete && view2.complete ){
+if(!requestImg
+&& view.complete && view2.complete
+){
 	ws.send("reflash");
 	 requestImg = true;}}}
 function intervalRun(){
