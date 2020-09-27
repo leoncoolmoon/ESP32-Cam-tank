@@ -431,7 +431,7 @@ d3=val;}
 var interval = null;
 function photo(){
 if(connection) {
-if(!requestImg){
+if(!requestImg && view.complete && view2.complete ){
 	ws.send("reflash");
 	 requestImg = true;}}}
 function intervalRun(){
