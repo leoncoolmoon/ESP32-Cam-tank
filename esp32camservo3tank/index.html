@@ -27,7 +27,7 @@
 .item {
 	width: 15vh;
 	height: 15vh;
-	background-color: rgb(245, 99, 99);
+	background-color: rgb(245, 230, 99);
 	border: 10px solid rgba(136, 136, 136, .5);
 	border-radius: 50%;
 	touch-action: none;
@@ -61,7 +61,7 @@
 	background: black;
 	border-radius: 7px;}
 #stream{
-	transform: rotate(90deg);
+	transform: rotate(180deg);
 	display:block;
 	max-width:100%;
 	max-height:100%;
@@ -70,7 +70,7 @@
 	margin-top:8px
 	position: absolute; }
 #stream2{
-	transform: rotate(90deg);
+	transform: rotate(180deg);
 	display:block;
 	max-width:100%;
 	max-height:100%;
@@ -95,18 +95,27 @@
 	left: 16px;
 	color:white;
 	background:#00000075; }
+.tele2{
+	width: 50vh;
+	position: absolute;
+	z-index: 999;
+	top: 32px;
+	left: 32px;
+	color:white;
+	background:#00000088;
+    border: 2px solid white	}
 </style></head><body>
 <div class='tele'>
-<input type="checkbox" id='morebt' checked onclick="infme(this.checked)">Info:</input>
+<input type="checkbox" id='morebt' checked onclick="infme(this.checked)">Info</input>
 <div id='infme'>
 <label for="ipad">IP:</label>
-<input type="text" placeholder="xxx.xxx.xxx.xxx" value="192.168.4.1" id="ipad" style="width:100;"/></br>
+<input type="text" placeholder="xxx.xxx.xxx.xxx" value="192.168.2.114" id="ipad" style="width:100;"/></br>
 <div id="bat" >Battery: 0 v</div>
 <div id="sig" >Signal: 0 db</div>
-<div id="fps" >avgFPS: 0 </div>                               
+<div id="fps" >avgFPS: 0 </div>
 <!-- <div id="dir" >Direction: 0</div> -->
 <input type="checkbox" id='settingbt' onclick="menu(this.checked)">Setting</input>
-<div id='settings' style='display:none'>
+<div id='settings' style='display:none' class='tele2'>
 <input type="checkbox" id='play' onclick="play(this.checked)">Play</input><input type="checkbox" id='rec' onclick="reco(this.checked)">RECORD</input></br>
 <label for="ael">AE Level:</label>
 <input type="range" id='ael' onchange="keymsg('ael:'+this.value)" value ="0" min="-2" max="2" style="width:100;" ></br>
@@ -126,20 +135,35 @@
 <input type="button" id="photo" value="Photo" onclick="photo()" disabled> </br>
 <input type="checkbox" id='led' onclick="led(this.checked)">LED</input>
 <input type="range" id='bri' onchange="keymsg('bri:'+this.value)" value ="255" min="0" max="255" style="width:100;" disabled></br>
-<label for="rtpn">Resolution:</label>
+<label for="rtpn">View:</label>
 <select id="rtpn" name="rtpn" onchange="rtpn(this.value)" >
 <option value="1"selected="selected">Nav Ball</option>
 <option value="2">3D goggle</option>
 <option value="3">Buttoms</option></select></br>
+<label for="ort">Orientation:</label>
+<select id="ort" name="ort" onchange="mirror()" >
+<option value="0">0</option>
+<option value="1">90</option>
+<option value="2" selected="selected">180</option>
+<option value="3">270</option></select>
+<label for="mirror">Mirror:</label>
+<select id="mirror" name="mirror" onchange="mirror()" >
+<option value="0"selected="selected">Reset</option>
+<option value="1">L/R</option>
+<option value="2">U/D</option>
+<option value="3">U/D+L/R</option></select></br>
 <input type="button" id="full" value="Full Screen" onclick="atFullscreen()" > </br>
  <label for="thr">Center Threadhold:</label>
  <input type="number" id='thr' onchange="keymsg('thr:'+this.value)" value="32" style="width:48;"></input></br>
  <label for="fix">Turnning Threadhold:</label>
 <input type="number" id='fix' onchange="keymsg('fix:'+this.value)" value ="5" style="width:48;"></input></br>
  <label for="bal">L/R Balance:</label>
- L <input type="range" id='bal' onchange="keymsg('bal:'+this.value)" value ="50" min="0" max="100"style="width:100;"></input>R</br>
+ L <input type="range" id='bal' onchange="keymsg('bal:'+this.value)" value ="50" min="0" max="100"style="width:100;"></input>R</br> 
+ <label for="pwr">K-move PWM opt%:</label>
+ 0 <input type="range" id='pwr' onchange="keymsg('pwr:'+this.value)" value ="64" min="0" max="100"style="width:100;"></input>100</br>
+ <label for="pwt">K-turn PWM opt%:</label>
+ 0 <input type="range" id='pwt' onchange="keymsg('pwt:'+this.value)" value ="50" min="0" max="100"style="width:100;"></input>100</br>
 	<label for="itv">Auto reconnect interval:</label>
-<input type="number" id='itv' onchange="itv(this.value)" value ="2000" style="width:56;"></input></br>
 <input type="number" id='itv' onchange="itv(this.value)" value ="2000" style="width:56;"></input></br>
 </div></div></div>
 <div id='outerContainer'>
@@ -161,6 +185,10 @@
 	<div id='container' class="container">
 	<div id='item' class="item"></div></div></div></div>
 <script>
+//test
+document.getElementById("stream2").src="img.jpg"; 
+document.getElementById("stream").src="img.jpg"; 
+//test
 var fpst1=0,fpst2,fps,afps=0,fc=0;
 function fpsc(){
 fc=fc+1;
@@ -298,23 +326,24 @@ ckConn=setInterval(function() {
 function wsConnect(url) {
 ws = new WebSocket(url, ['arduino']);
 ws.onopen=()=>{
-connecting = false;                  
+connecting = false;
 connection=true; 
 document.getElementById("play").click();
 checkConn();
+element.getElementById("ipad").value = window.location.host;
 console.log("connected");
 ws.send("greetings");}
 ws.onerror=()=>{
-connecting = false;                   
+connecting = false;
 console.log("ws e");}
 ws.onclose=()=>{
-connecting = false;                  
-connection=false;
+connecting = false;
+connection = false;
 clearInterval(ckConn);
 console.log("drop out w c");
 connect();}
 ws.onmessage = message => {
-connecting = false;                   
+connecting = false;
 incomming = true;
 	if (message.data instanceof Blob) {
 	requestImg = false;
@@ -449,10 +478,19 @@ document.getElementById("part1").style.display=val==1?"flex":"none";
 document.getElementById("part2").style.display=val==2?"flex":"none";
 document.getElementById("part3").style.display=val==3?"flex":"none";
 d3=val;}
+
+function mirror(){
+var ang1=document.getElementById("ort").options.selectedIndex;
+var ang2=document.getElementById("mirror").options.selectedIndex;
+var mx= ang2%2==0?1:-1;
+var my= ang2<2?1:-1;
+document.getElementById("stream").style.transform="rotate(" + (ang1*90) + "deg) scaleX("+mx+") scaleY("+my+")";
+document.getElementById("stream2").style.transform="rotate(" + (ang1*90) + "deg) scaleX("+mx+") scaleY("+my+")";
+}
 var interval = null;
 function photo(){
 if(connection) {
-if(!requestImg
+if(!requestImg 
 && view.complete && view2.complete
 ){
 	ws.send("reflash");
@@ -546,7 +584,8 @@ function full(ele) {
 	}}
 function Fullscreen() {
 full(document.body);
-fullsc = true;}
+fullsc = true;
+}
 function exitFullscreen() {
 fullsc = false;
 	if(document.exitFullScreen) {
@@ -557,7 +596,66 @@ fullsc = false;
 	document.webkitExitFullscreen();
 	} else if(element.msExitFullscreen) {
 	element.msExitFullscreen();
-	}}
+	}
+	
+	}
 function atFullscreen(){
-fullsc?exitFullscreen():Fullscreen()}
+fullsc?exitFullscreen():Fullscreen()
+wklk(!fullsc);
+}
+//screen wakelock
+/*var wakeLockRequest = null;
+async function wklk(wklkswitch){
+var result = null;
+if(wklkswitch){
+if(wakeLockRequest==null || wakeLockRequest.released){
+wakeLockRequest = await navigator.wakeLock.request("screen");}
+}else{
+if(wakeLockRequest!=null && !wakeLockRequest.released){
+ wakeLockRequest.release();
+}}
+result = wakeLockRequest.released;
+console.log(`Wake lock is ${ result ?  'not active':'active'}`);  
+document.getElementById("area").value = `Wake lock is ${ result ?  'not active':'active'}`;
+}
+*/
+
+let wakeLockObj = null;
+
+function wklk(wklkswitch) {
+document.getElementById("area").value ="1";
+if ("wakeLock" in navigator) {
+document.getElementById("area").value ="2";
+	if(!wklkswitch){
+	document.getElementById("area").value ="3";
+    if(!wakeLockObj) {
+	document.getElementById("area").value ="4";
+      navigator.wakeLock.request('screen')
+        .then((wakeLock) => {
+          wakeLockObj = wakeLock;
+		  document.getElementById("area").value = `Wake lock is ${ wakeLockObj.released ?  'not active':'active'}`;
+          wakeLockObj.addEventListener('release', () => {
+		  if(fullsc){exitFullscreen();}
+            wakeLockObj = null;
+          })         
+        })
+        .catch((err) => {
+		document.getElementById("area").value ="5";
+          console.error(err);
+        })
+		 document.getElementById("area").value ="6";
+    }
+	}else{if (wakeLockObj) {
+      wakeLockObj.release();
+      wakeLockObj = null;
+    }
+	 document.getElementById("area").value = `Wake lock is not active`;
+	}
+  }else{
+  document.getElementById("area").value ="A";
+  }
+ 
+
+}
+
 </script></body></html>
