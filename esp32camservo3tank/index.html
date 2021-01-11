@@ -104,7 +104,7 @@
 	color:white;
 	background:#00000088;
     border: 2px solid white	}
-</style></head><body>
+</style></head><body style="background:black;">
 <div class='tele'>
 <input type="checkbox" id='morebt' checked onclick="infme(this.checked)">Info</input>
 <div id='infme'>
@@ -139,7 +139,8 @@
 <select id="rtpn" name="rtpn" onchange="rtpn(this.value)" >
 <option value="1"selected="selected">Nav Ball</option>
 <option value="2">3D goggle</option>
-<option value="3">Buttoms</option></select></br>
+<option value="3">Buttoms</option>
+<option value="4">Full Screen</option></select></br>
 <label for="ort">Orientation:</label>
 <select id="ort" name="ort" onchange="mirror()" >
 <option value="0">0</option>
@@ -167,8 +168,8 @@
 <input type="number" id='itv' onchange="itv(this.value)" value ="2000" style="width:56;"></input></br>
 </div></div></div>
 <div id='outerContainer'>
-<div id="stream-container" class="image-container" tabindex="0" onkeydown="keyCtrl(event.keyCode)" onkeyup="keyStop()">
-	<img id="stream" onload="fpsc()"></div>
+<div id="stream-container" class="image-container"  >
+	<img id="stream" onload="fpsc()" onkeydown="keyCtrl(event.keyCode)" tabindex="0" onkeyup="keyStop()"></div>
 <div id="part3" class="nav" tabindex="2" onkeydown="keyCtrl(event.keyCode)" onkeyup="keyStop()" >
  <div id="leftbt"><div>
 	<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"> <path d="M8.122 24l-4.122-4 8-8-8-8 4.122-4 11.878 12z" fill="white" transform="rotate(180,12,12)"/></svg></div></div>
@@ -178,8 +179,8 @@
 	 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"> <path d="M8.122 24l-4.122-4 8-8-8-8 4.122-4 11.878 12z" fill="white" transform="rotate(90,12,12)"/></svg></div></div>
  <div><div>
 	 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"> <path d="M8.122 24l-4.122-4 8-8-8-8 4.122-4 11.878 12z" fill="white" /></svg></div></div></div>
-<div id="part2" class="image-container" tabindex="1" onkeydown="keyCtrl(event.keyCode)" onkeyup="keyStop()" >
-	<img id="stream2" ></div>
+<div id="part2" class="image-container" >
+	<img id="stream2" tabindex="1" onkeydown="keyCtrl(event.keyCode)" onkeyup="keyStop()" ></div>
 <div id='part1'>
 <input type='textarea' id='area' disabled />
 	<div id='container' class="container">
@@ -477,7 +478,9 @@ function rtpn(val){
 document.getElementById("part1").style.display=val==1?"flex":"none";
 document.getElementById("part2").style.display=val==2?"flex":"none";
 document.getElementById("part3").style.display=val==3?"flex":"none";
-d3=val;}
+d3=val;
+if (val==4){FullscreenView();}
+}
 
 function mirror(){
 var ang1=document.getElementById("ort").options.selectedIndex;
@@ -582,6 +585,9 @@ function full(ele) {
 	} else if (ele.msRequestFullscreen) {
 	ele.msRequestFullscreen();
 	}}
+function FullscreenView() {
+full(document.getElementById("stream"));
+}
 function Fullscreen() {
 full(document.body);
 fullsc = true;
