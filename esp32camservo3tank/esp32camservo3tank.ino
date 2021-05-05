@@ -69,9 +69,10 @@ int scr = 1;//screen on 1 ,screen off 0
 //#define PAN_TILT_CAR
 
 //#if defined(PAN_TILT_ONLY)
-#define P_SERVO     3
+
+#define P_SERVO     3 //PIN 1，3，12 can be used
 #define T_SERVO     12
-#define P_SERVO_C     4//chennal 4 not working
+#define P_SERVO_C     3
 #define T_SERVO_C     2
 #define P_SERVO_D    45
 #define T_SERVO_D    45
