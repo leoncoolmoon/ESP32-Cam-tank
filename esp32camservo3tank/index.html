@@ -104,19 +104,35 @@
 	color:white;
 	background:#00000088;
     border: 2px solid white	}
+	
+[tip]:before {
+    content: attr(tip);
+    position: absolute;
+    opacity: 0;
+
+}
+
+[tip]:hover:before {
+    opacity: 85%;
+    border-radius: 3px;
+    padding: 3px;
+    background: rgb(245, 230, 99);
+    color: black;
+    margin: 25px 0 0 0;   /*setting it above. to the left. You can play with this */
+}
 </style></head><body style="background:black;">
 <div class='tele'>
 <input type="checkbox" id='morebt' checked onclick="infme(this.checked)">Info</input>
 <div id='infme'>
 <label for="ipad">IP:</label>
-<input type="text" placeholder="xxx.xxx.xxx.xxx" value="192.168.2.114" id="ipad" style="width:100;"/></br>
+<input type="text" placeholder="xxx.xxx.xxx.xxx" value="192.168.4.1" id="ipad" style="width:100;"/></br>
 <div id="bat" >Battery: 0 v</div>
 <div id="sig" >Signal: 0 db</div>
 <div id="fps" >avgFPS: 0 </div>
 <!-- <div id="dir" >Direction: 0</div> -->
 <input type="checkbox" id='settingbt' onclick="menu(this.checked)">Setting</input>
 <div id='settings' style='display:none' class='tele2'>
-<input type="checkbox" id='play' onclick="play(this.checked)">Play</input><input type="checkbox" id='rec' onclick="reco(this.checked)">RECORD</input></br>
+<input type="checkbox" id='play' onclick="play(this.checked)">Play</input><input type="checkbox" id='rec' onclick="reco(this.checked)" tip="Recode via web">RECORD</input></br>
 <label for="ael">AE Level:</label>
 <input type="range" id='ael' onchange="keymsg('ael:'+this.value)" value ="0" min="-2" max="2" style="width:100;" ></br>
 <label for="aec">Exposure:</label>
@@ -132,7 +148,8 @@
 <option value="4"selected="selected">*QVGA(320x240)</option>
 <option value="3">HQVGA(240x176)</option>
 <option value="0">QQVGA(160x120)</option></select>
-<input type="button" id="photo" value="Photo" onclick="photo()" disabled> </br>
+<input type="button" id="photo" value="Photo" onclick="photo(true)" disabled> </br>
+<!-- <input type="checkbox" id='scr' onclick="keymsg('scr:'+this.checked?'0':'1')" checked  tip="Switch for screen on the tank" >OLED</input> -->
 <input type="checkbox" id='led' onclick="led(this.checked)">LED</input>
 <input type="range" id='bri' onchange="keymsg('bri:'+this.value)" value ="255" min="0" max="255" style="width:100;" disabled></br>
 <label for="rtpn">View:</label>
@@ -141,32 +158,40 @@
 <option value="2">3D goggle</option>
 <option value="3">Buttoms</option>
 <option value="4">Full Screen</option></select></br>
-<label for="ort">Orientation:</label>
+<label for="ort" tip="Roate camera image" >Orientation:</label>
 <select id="ort" name="ort" onchange="mirror()" >
-<option value="0">0</option>
+<option value="0" >0</option>
 <option value="1">90</option>
 <option value="2" selected="selected">180</option>
 <option value="3">270</option></select>
-<label for="mirror">Mirror:</label>
+<label for="mirror" tip="Mirror flip camera image">Mirror:</label>
 <select id="mirror" name="mirror" onchange="mirror()" >
 <option value="0"selected="selected">Reset</option>
 <option value="1">L/R</option>
 <option value="2">U/D</option>
 <option value="3">U/D+L/R</option></select></br>
 <input type="button" id="full" value="Full Screen" onclick="atFullscreen()" > </br>
- <label for="thr">Center Threadhold:</label>
+ <label for="thr" tip="Threadhold of the distance between navball to the center for generate action">Center Threadhold:</label>
  <input type="number" id='thr' onchange="keymsg('thr:'+this.value)" value="32" style="width:48;"></input></br>
- <label for="fix">Turnning Threadhold:</label>
+ <label for="fix"  tip="Threadhold of the distance between navball to the center for turning">Turnning Threadhold:</label>
 <input type="number" id='fix' onchange="keymsg('fix:'+this.value)" value ="5" style="width:48;"></input></br>
- <label for="bal">L/R Balance:</label>
+ <label for="bal" tip="Left Right balance tank">L/R Balance:</label>
  L <input type="range" id='bal' onchange="keymsg('bal:'+this.value)" value ="50" min="0" max="100"style="width:100;"></input>R</br> 
- <label for="pwr">K-move PWM opt%:</label>
- 0 <input type="range" id='pwr' onchange="keymsg('pwr:'+this.value)" value ="64" min="0" max="100"style="width:100;"></input>100</br>
- <label for="pwt">K-turn PWM opt%:</label>
- 0 <input type="range" id='pwt' onchange="keymsg('pwt:'+this.value)" value ="50" min="0" max="100"style="width:100;"></input>100</br>
-	<label for="itv">Auto reconnect interval:</label>
-<input type="number" id='itv' onchange="itv(this.value)" value ="2000" style="width:56;"></input></br>
-</div></div></div>
+ <label for="pwr" tip="Forward /Backward speed when push key to control">K-move PWM opt%:</label>
+ 0 <input type="range" id='pwr' onchange="keymsg('pwr:'+this.value)" value ="100" min="0" max="100"style="width:100;"></input>100</br>
+ <label for="pwt" tip="Left /Right speed when push key to turn" >K-turn PWM opt%:</label>
+ 0 <input type="range" id='pwt' onchange="keymsg('pwt:'+this.value)" value ="100" min="0" max="100"style="width:100;"></input>100</br>
+<label for="bka" tip="Displaied battery votage = Analog reading/BCA" >BCA:</label>
+<!--battery votage= analogRead(BATT)/BCA -->
+<input type="number" id='bka' onchange="keymsg('bka:'+this.value)" value ="757" style="width:56;"></input></br>
+<label for="itv">Auto reconnect interval:</label>
+<input type="number" id='itv' onchange="itv(this.value)" value ="2000" style="width:56;"></input></br></br>
+<input type="checkbox" id='sera' tip="Realtime move the the servo">Realtime Servo</input>
+</div></div></br>
+<label for="ser">servo:</label>
+<input type="range" id='ser' onchange="sera('ser:'+this.value,false)" oninput="sera('ser:'+this.value,true)" value ="0" min="-90" max="90" style="width:180;" ></br>
+
+</div>
 <div id='outerContainer'>
 <div id="stream-container" class="image-container"  >
 	<img id="stream" onload="fpsc()" onkeydown="keyCtrl(event.keyCode)" tabindex="0" onkeyup="keyStop()"></div>
@@ -190,6 +215,20 @@
 document.getElementById("stream2").src="img.jpg"; 
 document.getElementById("stream").src="img.jpg"; 
 //test
+//check if the brower support passive mode.
+var supportsPassive = false;
+try {
+  var opts = Object.defineProperty({}, 'passive', {
+    get: function() {
+      supportsPassive = true;
+    }
+  });
+  window.addEventListener("testPassive", null, opts);
+  window.removeEventListener("testPassive", null, opts);
+  } catch (e) {
+    console.log(e);
+  }
+ // passive check end
 var fpst1=0,fpst2,fps,afps=0,fc=0;
 function fpsc(){
 fc=fc+1;
@@ -385,7 +424,12 @@ var aec = getParameterByNameFromString("aec",message.data);
 if((aec !== undefined) && (aec !== null))(document.getElementById("aec").value=aec);
 var ael = getParameterByNameFromString("ael",message.data);
 if((ael !== undefined) && (ael !== null))(document.getElementById("ael").value=ael);
+var bka = getParameterByNameFromString("bka",message.data);
+if((bka !== undefined) && (bka !== null))(document.getElementById("bka").value=bka);
+var scr = getParameterByNameFromString("scr",message.data);
+if((scr !== undefined) && (scr !== null))(document.getElementById("scr").checked=scr=="1");
 }};}
+
 var btnv=document.querySelector('#part3');//nav
 var btnvWidth = btnv.offsetWidth;
 var btnvHeight = btnv.offsetHeight;
@@ -491,16 +535,16 @@ document.getElementById("stream").style.transform="rotate(" + (ang1*90) + "deg) 
 document.getElementById("stream2").style.transform="rotate(" + (ang1*90) + "deg) scaleX("+mx+") scaleY("+my+")";
 }
 var interval = null;
-function photo(){
+function photo(manual){
 if(connection) {
-if(!requestImg 
+if((!requestImg|| manual)
 && view.complete && view2.complete
 ){
 	ws.send("reflash");
 	 requestImg = true;}}}
 function intervalRun(){
 interval = setInterval(function() { 
-	photo();}, 50);}	 
+	photo(false);}, 50);}	 
 //intervalRun();	
 function play(tf){
 document.getElementById("res").disabled=tf;
@@ -512,7 +556,7 @@ reco(false);
 }
 recbt.disabled=!tf;
 if(!tf){clearInterval(interval); 
-}else{intervalRun();}}
+}else{photo(true);intervalRun();}}
 function reco(tf){
 rec=tf;
 if(tf){
@@ -528,6 +572,43 @@ if(!tf){
 }else{
  if(connection) ws.send("ledon");
 }}
+//mouse wheel servo
+var Ranges = [document.getElementById("ser"),document.getElementById("bri")];
+//array1.forEach(element => console.log(element));
+Ranges.forEach(element => {
+if(element.addEventListener){
+		element.addEventListener("mousewheel", MouseWheelHandler, supportsPassive ? { passive: false } :false);
+		element.addEventListener("DOMMouseScroll", MouseWheelHandler, supportsPassive ? { passive: false } :false);
+	}else element.attachEvent("onmousewheel", MouseWheelHandler(e),false);
+	});
+//increase mouse wheel speed
+var oldTime=0;
+var wheelSpeedInc=1;
+var wheelSpeedIncMax=5;
+var speedUpTime=200;
+var speedResetTime=800;
+function speedAcc(){
+  var currentDate = new Date();
+  var currentTime = currentDate.getTime();
+  if(currentTime-oldTime<speedUpTime && wheelSpeedInc<wheelSpeedIncMax){
+  wheelSpeedInc++;//if wheel move fast increase speed
+  }else if(currentTime-oldTime>speedResetTime){
+  wheelSpeedInc = 1;//if wheel move slow put speed back to normal
+  }
+  //if wheel speed is just right not change the move speed
+  oldTime = currentTime;
+}
+//handle mouse wheel 
+function MouseWheelHandler(e) {
+//e.preventDefault(); 
+speedAcc();
+e.target.value=parseInt(e.target.value)+(e.wheelDelta/120)*wheelSpeedInc;
+keymsg(e.target.id + ':'+e.target.value);
+		return false;
+	}
+
+//realtime servo
+function sera(info,sc){if (sc == document.getElementById("sera").checked){keymsg(info);}}
 function keymsg(info){ if(connection) ws.send(info);}
 function keymsgres(info){ if(connection) {
 	ws.send(info);

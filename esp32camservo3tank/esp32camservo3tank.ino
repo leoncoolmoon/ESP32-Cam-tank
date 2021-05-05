@@ -7,6 +7,14 @@
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "index_html_gz.h"
+//#include <Wire.h>
+//#include <SPI.h>
+//#include <Adafruit_GFX.h>
+//#include <Adafruit_SSD1306.h>
+#include <ESPmDNS.h>
+#include <WiFiUdp.h>
+#include <ArduinoOTA.h>
+//enable OTA for esp32cam: https://arduino.stackexchange.com/questions/75198/why-doesnt-ota-work-with-the-ai-thinker-esp32-cam-board
 
 const char* ssid = "espcam";
 const char* password = "leoncoolmoon";
@@ -16,12 +24,25 @@ long runtimeDelay = 300;
 boolean isrunning = false;
 boolean ledon = false;
 long teltime = 0;
-long teltimeDelay = 1000;
+long teltimeDelay = 2000;
 boolean tlconnected = false;
+
 int res = 4;
 int aec = 204;
 int ael =0;
+int thr = 32;
+int fix = 5;
+int bal = 50; // left right balance
+int pwr = 255;//key input power for running
+int pwt = 255;//key input power for turning
+int bri = 255;//led brightness
+int bka =  757;//convert analog read to votage
+int scr = 1;//screen on 1 ,screen off 0
 
+#define I2C_SDA 15
+#define I2C_SCL 14
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 32 // OLED display height, in pixels
 #define PWDN_GPIO_NUM     32
 #define RESET_GPIO_NUM    -1
 #define XCLK_GPIO_NUM      0
@@ -42,7 +63,7 @@ int ael =0;
 #define LED_C             9
 #define r_LED             33
 #define BATT              33
-#define BK                1.72//convert analog read to votage
+
 //#define PAN_TILT_ONLY
 #define PAN_TILT_TANK
 //#define PAN_TILT_CAR
@@ -50,8 +71,8 @@ int ael =0;
 //#if defined(PAN_TILT_ONLY)
 #define P_SERVO     3
 #define T_SERVO     12
-#define P_SERVO_C     2
-#define T_SERVO_C     4
+#define P_SERVO_C     4//chennal 4 not working
+#define T_SERVO_C     2
 #define P_SERVO_D    45
 #define T_SERVO_D    45
 //#endif
@@ -83,17 +104,14 @@ int wheelDir = 45;
 #define wFreq     8000
 #define wResolution  8
 
+//TwoWire i2c = TwoWire(0);
+
 camera_fb_t * fb = NULL;
-int thr = 32;
-int fix = 5;
-int bal = 50; // left right balance
-int pwr = 164;//key input power for running
-int pwt = 127;//key input power for turning
-int bri = 255;//led brightness
+
 WebSocketsServer webSocket(82);
 //WebsocketsServer WSserver;
 AsyncWebServer webserver(80);
-
+//Adafruit_SSD1306 oled;
 // Arduino like analogWrite
 // value has to be between 0 and valueMax
 void pwmOutPut(uint8_t channel, uint32_t value, uint32_t valueMax = 180) {
@@ -116,7 +134,74 @@ void pwmOutPut(uint8_t channel, uint32_t value, uint32_t valueMax = 180) {
 void setup() {
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
   Serial.begin(115200);
- 
+  //i2c.begin(I2C_SDA, I2C_SCL);
+  //oled = Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &i2c);
+   //if(!oled.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3C for 128x32
+   // Serial.println(F("SSD1306 allocation failed"));
+   // for(;;); // Don't proceed, loop forever
+  //}
+
+
+
+  /*//station mode
+   * 
+   * WiFi.mode(WIFI_STA);
+   * WiFi.begin(ssid, password);
+   */
+  //softap mode
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP(ssid, password);
+
+  // Wait for connection
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+   String ip = WiFi.localIP().toString();  
+  Serial.println("");
+  Serial.print("Connected to ");
+  Serial.print("IP address: ");
+  Serial.println(ip);
+  //oled.clearDisplay();
+  //oled.setTextColor(WHITE);
+  //oled.setCursor(1, 10);
+  //oled.println("IP:"+ip);
+  //oled.display();
+
+  ArduinoOTA.setHostname("esp32-tank");
+  ArduinoOTA.setPassword(password);
+   ArduinoOTA
+    .onStart([]() {
+      String type;
+      if (ArduinoOTA.getCommand() == U_FLASH)
+        type = "sketch";
+      else // U_SPIFFS
+        type = "filesystem";
+
+      // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+      Serial.println("Start updating " + type);
+    })
+    .onEnd([]() {
+      Serial.println("\nEnd");
+    })
+    .onProgress([](unsigned int progress, unsigned int total) {
+      Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+    })
+    .onError([](ota_error_t error) {
+      Serial.printf("Error[%u]: ", error);
+      if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+      else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+      else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+      else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+      else if (error == OTA_END_ERROR) Serial.println("End Failed");
+    });
+
+  ArduinoOTA.begin();
+  Serial.println("ATO ready!");
+  //oled.setCursor(1, 21);
+  //oled.println("ATO ready!");
+  //oled.display();
+  
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
@@ -151,8 +236,8 @@ void setup() {
 
   // camera init
   esp_err_t err = esp_camera_init(&config);
-  if (err != ESP_OK) {
-    Serial.printf("Camera init failed with error 0x%x", err);
+ if (err != ESP_OK) {
+   Serial.printf("Camera init failed with error 0x%x", err);
     return;
   }
 
@@ -161,6 +246,12 @@ void setup() {
   //s->set_vflip(s, 1);//flip it back
   //s->set_brightness(s, 1);//up the blightness just a bit
   //s->set_saturation(s, -2);//lower the saturation
+
+  //oled.fillRect(1, 21, 128, 32, BLACK);
+  //oled.display(); 
+  //oled.setCursor(1, 21);
+  //oled.println("Camera ready!");
+  //oled.display();
 
  //LED
   pinMode(r_LED, OUTPUT);
@@ -217,26 +308,6 @@ void setup() {
   ledcWrite(WHEEL_R_B_C, 0);
 #endif
 
-  /*//station mode
-   * 
-   * WiFi.mode(WIFI_STA);
-   * WiFi.begin(ssid, password);
-   */
-  //softap mode
-  WiFi.mode(WIFI_AP);
-  WiFi.softAP(ssid, password);
-
-  // Wait for connection
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.println("");
-  Serial.print("Connected to ");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-
   webserver.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {
     AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", index_html_gz, sizeof(index_html_gz));
     response->addHeader("Content-Encoding", "gzip");
@@ -257,9 +328,19 @@ void setup() {
     pwmOutPut(T_SERVO_C, T_SERVO_D);
     //  #endif
   });
-
+  //oled.fillRect(1, 21, 128, 32, BLACK);
+  //oled.display(); 
+  //oled.setCursor(1, 21);
+  //oled.println("LED+motor ready!");
+  //oled.display();
+  
   webserver.begin();
   webSocket.begin();
+  //oled.fillRect(1, 21, 128, 32, BLACK);
+  //oled.display(); 
+  //oled.setCursor(1, 21);
+  //oled.println("Web UI ready!");
+  //oled.display();
   webSocket.onEvent(webSocketEvent);
 }
 
@@ -352,6 +433,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           Serial.print("bri:");
           Serial.println(bri);
           ledcWrite(LED_C, bri);
+        }else if (msg.startsWith("bka:")) {
+          bka = msg.substring(4).toInt();
+          Serial.print("bka:");
+          Serial.println(bka);
         }else if (msg.startsWith("res:")) {
           res = msg.substring(4).toInt();
           Serial.print("res:");
@@ -370,15 +455,30 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           Serial.println(ael);
             sensor_t * s = esp_camera_sensor_get();
             s->set_ae_level(s, ael);
-        } else if(msg.startsWith("key:")){   
+        } else  if (msg.startsWith("scr:")) {
+          scr = msg.substring(4).toInt();
+          Serial.print("scr:");
+          Serial.println(scr);
+          //0:turn off screen,1:turn on screen
+            // oled.ssd1306_command(scr == 0?SSD1306_DISPLAYOFF:SSD1306_DISPLAYON);      
+        }else if(msg.startsWith("key:")){   
           int keyCode = msg.substring(4).toInt();
           Serial.print("keyCode:");
           Serial.println(keyCode);
           keyMove(keyCode); 
+        }else if(msg.startsWith("ser:")){   
+          int servo = msg.substring(4).toInt()+90;
+          Serial.print("angle:");
+          Serial.println(servo);
+          Serial.print("servo:");
+          Serial.println(T_SERVO);
+          Serial.print("servo chennal:");
+          Serial.println(T_SERVO_C);
+          pwmOutPut(T_SERVO_C, servo);
         } else  if (!msg.compareTo( "greetings")) {
           //"&sig=&bat=&dir="
-          //res, bri, ledon,thr,fix,bal,
-          String initx=String("&res=")+res+"&bri="+bri+"&ledon="+(ledon?"1":"0")+"&thr="+thr+"&fix="+fix+"&bal="+bal+"&aec="+aec+"&ael="+ael;
+          //res, bri, ledon,thr,fix,bal,aec,ael,bka,scr...
+          String initx=String("&res=")+res+"&bri="+bri+"&ledon="+(ledon?"1":"0")+"&thr="+thr+"&fix="+fix+"&bal="+bal+"&aec="+aec+"&ael="+ael+"&bka="+bka+"&scr="+scr;
           webSocket.broadcastTXT(initx);
           }
       }
@@ -387,6 +487,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       break;
   }
 }
+
 #if defined(PAN_TILT_CAR)
 void wheel(int x) {//-255~255
   if (abs(x) > thr ) {
@@ -502,7 +603,7 @@ String getRSS(){
 String getBAT(){
   adc1_config_width(ADC_WIDTH_BIT_10);   //Range 0-1023 
   adc1_config_channel_atten(ADC1_CHANNEL_5,ADC_ATTEN_DB_11); 
-  String rt=String(analogRead(BATT)/BK, DEC);//0-4095 0-5v
+  String rt=String(analogRead(BATT)/bka, DEC);//0-4095 0-5v
   Serial.print("BATTERY: ");
   Serial.println(rt);
   return rt;
@@ -567,7 +668,18 @@ void loop() {
    if((t - teltime > teltimeDelay)){
     //update telemtry
     teltime = t;
-   String tlmtx="&sig="+getRSS()+"&bat="+getBAT()+"&dir="+getDIR();
+    
+   String tlmtx= "S:"+getRSS()+"db |B:"+getBAT();
+
+  //oled.fillRect(1, 21, 128, 32, BLACK);
+  //oled.display(); 
+  //oled.setCursor(1, 21);
+  //oled.println(tlmtx+"V");//ip.c_str()
+  //oled.display(); 
+     tlmtx=tlmtx+"&dir="+getDIR();
+     tlmtx.replace("S:","&sig=");
+     tlmtx.replace("db |B:","&bat=");
+     
     //"&sig=&bat=&dir="
      webSocket.broadcastTXT(tlmtx);
     }
@@ -586,4 +698,5 @@ void loop() {
 #endif
   }
   webSocket.loop();//need to know if it is blocking
+   ArduinoOTA.handle();
 }
