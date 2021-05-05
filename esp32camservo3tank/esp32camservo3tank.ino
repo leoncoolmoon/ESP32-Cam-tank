@@ -152,7 +152,7 @@ void setup() {
   //softap mode
   WiFi.mode(WIFI_AP);
   WiFi.softAP(ssid, password);
-
+  Serial.print("Wait for connection");
   // Wait for connection
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
