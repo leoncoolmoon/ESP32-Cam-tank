@@ -24,3 +24,6 @@ wire x n</br>
 
 # PCB:
 Added
+
+# Youtube:
+https://youtu.be/VJfHDhvp-oU
