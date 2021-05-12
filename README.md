@@ -1,12 +1,12 @@
 # ESP32-Cam-tank
-a fpv vehicle powered by esp32 cam.</br>
+A FPV vehicle powered by esp32 cam.</br>
 This project use a esp32-cam chip to make a common toy into a fpv rc toy.</br>
 It can record videos. 
 It also has telmetry to monitoring the battery voltage and wifi signal strength. </br>
 </br>
-The control UI can be adopted for both pc and mobile, touch, mouse and keyboard. It can even be placed into the 3d goggle when using the mobile</br> 
+The control UI can be adopted for both pc and mobile, touch screen, mouse and keyboard. It can even be placed into the 3d goggle when using the mobile</br> 
 The LED brightness can be adjusted</br>
-It still got spare pins for further development.</br>
+It still got spare pins GPIO01,03,12 + I2C  for further development.</br>
 Welcome to modify/upgrade and share. Have fun !</br>
 
 # material list:
@@ -24,6 +24,12 @@ wire x n</br>
 
 # PCB:
 Added
+
+# EXTRA PIN SOLDERING
+I2C@ GPIO26 and GPIO27
+![I2C](https://github.com/leoncoolmoon/ESP32-Cam-tank/blob/master/WIN_20210512_21_27_16_Pro.jpg?raw=true)</br>
+Battery @ GPIO33
+![BATTERY](https://github.com/leoncoolmoon/ESP32-Cam-tank/blob/master/WIN_20210512_21_47_42_Pro.jpg?raw=true)
 
 # Youtube:
 https://youtu.be/VJfHDhvp-oU
