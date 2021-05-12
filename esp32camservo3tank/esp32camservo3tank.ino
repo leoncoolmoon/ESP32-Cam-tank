@@ -7,10 +7,10 @@
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "index_html_gz.h"
-//#include <Wire.h>
-//#include <SPI.h>
-//#include <Adafruit_GFX.h>
-//#include <Adafruit_SSD1306.h>
+#include <Wire.h>
+#include <SPI.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 #include <ESPmDNS.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
@@ -39,8 +39,8 @@ int bri = 255;//led brightness
 int bka =  757;//convert analog read to votage
 int scr = 1;//screen on 1 ,screen off 0
 
-#define I2C_SDA 15
-#define I2C_SCL 14
+#define I2C_SDA 26//3
+#define I2C_SCL 27//1
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 32 // OLED display height, in pixels
 #define PWDN_GPIO_NUM     32
@@ -69,10 +69,9 @@ int scr = 1;//screen on 1 ,screen off 0
 //#define PAN_TILT_CAR
 
 //#if defined(PAN_TILT_ONLY)
-
-#define P_SERVO     3 //PIN 1，3，12 can be used
+#define P_SERVO     1//3
 #define T_SERVO     12
-#define P_SERVO_C     3
+#define P_SERVO_C     3//chennal 4 not working
 #define T_SERVO_C     2
 #define P_SERVO_D    45
 #define T_SERVO_D    45
@@ -105,14 +104,14 @@ int wheelDir = 45;
 #define wFreq     8000
 #define wResolution  8
 
-//TwoWire i2c = TwoWire(0);
+TwoWire i2c = TwoWire(0);
 
 camera_fb_t * fb = NULL;
 
 WebSocketsServer webSocket(82);
 //WebsocketsServer WSserver;
 AsyncWebServer webserver(80);
-//Adafruit_SSD1306 oled;
+Adafruit_SSD1306 oled;
 // Arduino like analogWrite
 // value has to be between 0 and valueMax
 void pwmOutPut(uint8_t channel, uint32_t value, uint32_t valueMax = 180) {
@@ -135,14 +134,14 @@ void pwmOutPut(uint8_t channel, uint32_t value, uint32_t valueMax = 180) {
 void setup() {
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
   Serial.begin(115200);
-  //i2c.begin(I2C_SDA, I2C_SCL);
-  //oled = Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &i2c);
-   //if(!oled.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3C for 128x32
-   // Serial.println(F("SSD1306 allocation failed"));
-   // for(;;); // Don't proceed, loop forever
-  //}
-
-
+  i2c.begin(I2C_SDA, I2C_SCL);
+  oled = Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &i2c);
+   if(!oled.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3C for 128x32
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;); // Don't proceed, loop forever
+  }
+  oled.clearDisplay();
+  oled.setTextColor(WHITE);
 
   /*//station mode
    * 
@@ -153,6 +152,9 @@ void setup() {
   WiFi.mode(WIFI_AP);
   WiFi.softAP(ssid, password);
   Serial.print("Wait for connection");
+  oled.setCursor(1, 10);
+  oled.println("Wait for connection...");
+  oled.display();
   // Wait for connection
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -163,11 +165,10 @@ void setup() {
   Serial.print("Connected to ");
   Serial.print("IP address: ");
   Serial.println(ip);
-  //oled.clearDisplay();
-  //oled.setTextColor(WHITE);
-  //oled.setCursor(1, 10);
-  //oled.println("IP:"+ip);
-  //oled.display();
+  oled.clearDisplay();
+  oled.setCursor(1, 10);
+  oled.println("IP:"+ip);
+  oled.display();
 
   ArduinoOTA.setHostname("esp32-tank");
   ArduinoOTA.setPassword(password);
@@ -199,9 +200,9 @@ void setup() {
 
   ArduinoOTA.begin();
   Serial.println("ATO ready!");
-  //oled.setCursor(1, 21);
-  //oled.println("ATO ready!");
-  //oled.display();
+  oled.setCursor(1, 21);
+  oled.println("ATO ready!");
+  oled.display();
   
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
@@ -248,11 +249,11 @@ void setup() {
   //s->set_brightness(s, 1);//up the blightness just a bit
   //s->set_saturation(s, -2);//lower the saturation
 
-  //oled.fillRect(1, 21, 128, 32, BLACK);
-  //oled.display(); 
-  //oled.setCursor(1, 21);
-  //oled.println("Camera ready!");
-  //oled.display();
+  oled.fillRect(1, 21, 128, 32, BLACK);
+  oled.display(); 
+  oled.setCursor(1, 21);
+  oled.println("Camera ready!");
+  oled.display();
 
  //LED
   pinMode(r_LED, OUTPUT);
@@ -329,19 +330,19 @@ void setup() {
     pwmOutPut(T_SERVO_C, T_SERVO_D);
     //  #endif
   });
-  //oled.fillRect(1, 21, 128, 32, BLACK);
-  //oled.display(); 
-  //oled.setCursor(1, 21);
-  //oled.println("LED+motor ready!");
-  //oled.display();
+  oled.fillRect(1, 21, 128, 32, BLACK);
+  oled.display(); 
+  oled.setCursor(1, 21);
+  oled.println("LED+motor ready!");
+  oled.display();
   
   webserver.begin();
   webSocket.begin();
-  //oled.fillRect(1, 21, 128, 32, BLACK);
-  //oled.display(); 
-  //oled.setCursor(1, 21);
-  //oled.println("Web UI ready!");
-  //oled.display();
+  oled.fillRect(1, 21, 128, 32, BLACK);
+  oled.display(); 
+  oled.setCursor(1, 21);
+  oled.println("Web UI ready!");
+  oled.display();
   webSocket.onEvent(webSocketEvent);
 }
 
@@ -672,11 +673,11 @@ void loop() {
     
    String tlmtx= "S:"+getRSS()+"db |B:"+getBAT();
 
-  //oled.fillRect(1, 21, 128, 32, BLACK);
-  //oled.display(); 
-  //oled.setCursor(1, 21);
-  //oled.println(tlmtx+"V");//ip.c_str()
-  //oled.display(); 
+  oled.fillRect(1, 21, 128, 32, BLACK);
+  oled.display(); 
+  oled.setCursor(1, 21);
+  oled.println(tlmtx+"V");//ip.c_str()
+  oled.display(); 
      tlmtx=tlmtx+"&dir="+getDIR();
      tlmtx.replace("S:","&sig=");
      tlmtx.replace("db |B:","&bat=");
